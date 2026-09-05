@@ -1,4 +1,5 @@
 name: Deploy application on ec2
+
 on:
   push:
     branches:
@@ -8,6 +9,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -32,7 +34,53 @@ jobs:
           remote-user: ${{ vars.EC2_USER }}
           server-ip: ${{ vars.EC2_SERVER_IP }}
           script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/testapp:latest
-            docker stop testapp || true
-            docker rm testapp || true
-            docker run -d --name testapp -p 80:3000 ${{ secrets.DOCKER_USERNAME }}/testapp:latest
+            # Check whether Docker is installed
+            if ! command -v docker >/dev/null 2>&1; then
+              echo "Docker is not installed. Installing Docker..."
+
+              sudo apt-get update
+              sudo apt-get install -y docker.io
+
+              sudo systemctl enable docker
+              sudo systemctl start docker
+
+              echo "Docker installed successfully."
+            else
+              echo "Docker is already installed."
+              docker --version
+            fi
+
+            # Add current user to docker group if not already present
+            if ! groups "$USER" | grep -q '\bdocker\b'; then
+              echo "Adding $USER to docker group..."
+              sudo usermod -aG docker "$USER"
+            else
+              echo "$USER is already in docker group."
+            fi
+
+            # Use sudo for the current SSH session
+            sudo docker --version
+
+            # Login to private DockerHub registry
+            echo "${{ secrets.DOCKER_PASSWORD }}" | \
+              sudo docker login \
+              -u "${{ secrets.DOCKER_USERNAME }}" \
+              --password-stdin
+
+            # Pull image
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/testapp:latest
+
+            # Stop old container
+            sudo docker stop testapp || true
+
+            # Remove old container
+            sudo docker rm testapp || true
+
+            # Start new container
+            sudo docker run -d \
+              --name testapp \
+              -p 80:3000 \
+              ${{ secrets.DOCKER_USERNAME }}/testapp:latest
+
+            # Verify container
+            sudo docker ps
