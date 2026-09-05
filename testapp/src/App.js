@@ -7,7 +7,7 @@ function App() {
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
-          This application is creaed to teach the basics of GitHub Actions and CI/CD pipeline.
+          This application is for demonstrating GitHub Actions workflow and nothing else.
         </p>
         <a
           className="App-link"
