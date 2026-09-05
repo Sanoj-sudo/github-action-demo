@@ -21,18 +21,18 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: ./testapp
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/testapp:latest
 
       - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1
         with:
-          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
-          remote-user: ${{ vars.EC2_USER }}
-          server-ip: ${{ vars.EC2_SERVER_IP }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          username: ${{ vars.EC2_USER }}
+          host: ${{ vars.EC2_SERVER_IP }}
           script: |
             # Check whether Docker is installed
             if ! command -v docker >/dev/null 2>&1; then
